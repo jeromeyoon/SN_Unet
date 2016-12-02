@@ -52,7 +52,7 @@ class DCGAN(object):
         self.d_loss_real = binary_cross_entropy_with_logits(tf.ones_like(self.D), self.D)
         self.d_loss_fake = binary_cross_entropy_with_logits(tf.zeros_like(self.D_), self.D_)
         self.d_loss = self.d_loss_real + self.d_loss_fake
-        self.L1_loss = tf.reduce_mean(tf.square(tf.sub(self.G,self.normal_images)))
+        self.L1_loss = tf.div(tf.reduce_sum(tf.abs(tf.sub(self.G,self.normal_images))),ir_image_shape[0]*ir_image_shape[1]*3)*100
         self.g_loss = binary_cross_entropy_with_logits(tf.ones_like(self.D_), self.D_)
         self.gen_loss = self.g_loss + self.L1_loss
 
@@ -73,7 +73,7 @@ class DCGAN(object):
         g_optim = tf.train.AdamOptimizer(config.g_learning_rate,beta1=config.beta1) \
                           .minimize(self.gen_loss, global_step=global_step1,var_list=self.g_vars)
 	tf.initialize_all_variables().run()
-	
+	pdb.set_trace()	
         start_time = time.time()
 
         if self.load(self.checkpoint_dir):
@@ -95,7 +95,7 @@ class DCGAN(object):
 	if self.use_queue:
 	    # creat thread
 	    coord = tf.train.Coordinator()
-            num_thread =32
+            num_thread =16
             for i in range(num_thread):
  	        t = threading.Thread(target=self.load_and_enqueue,args=(coord,train_input,train_gt,S,SS,i,num_thread))
 	 	t.start()
@@ -179,19 +179,19 @@ class DCGAN(object):
 	    
     def load_and_enqueue(self,coord,file_list,label_list,S,SS,idx=0,num_thread=1):
 	count =0;
-	rot=[0,90,180,270]
+	#rot=[0,90,180,270]
 	length = len(file_list)
 	while not coord.should_stop():
 	    i = (count*num_thread + idx) % length;
 	    #i = random.randint(0,len(file_list)-1) #select an object+tile
 	    j = random.randint(0,len(file_list[0])-1) # select an light direction
-	    r = random.randint(0,2)
+	    #r = random.randint(0,2)
             input_img = scipy.misc.imread(file_list[S[i]][SS[j]]).reshape([256,256,1]).astype(np.float32)
 	    gt_img = scipy.misc.imread(label_list[S[i]]).reshape([256,256,3]).astype(np.float32)
 	    input_img = input_img/127.5 -1.
 	    gt_img = gt_img/127.5 -1.
-	    input_img = scipy.ndimage.rotate(input_img,rot[r]) 
-	    gt_img = scipy.ndimage.rotate(gt_img,rot[r])
+	    #input_img = scipy.ndimage.rotate(input_img,rot[r]) 
+	    #gt_img = scipy.ndimage.rotate(gt_img,rot[r])
             self.sess.run(self.enqueue_op,feed_dict={self.ir_image_single:input_img,self.normal_image_single:gt_img})
 	    count +=1
 		

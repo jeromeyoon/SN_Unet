@@ -18,7 +18,7 @@ import time
 flags = tf.app.flags
 flags.DEFINE_integer("epoch", 1000, "Epoch to train [25]")
 flags.DEFINE_float("g_learning_rate", 0.0002, "Learning rate of for adam [0.0002]")
-flags.DEFINE_float("d_learning_rate", 0.00001, "Learning rate of for adam [0.0002]")
+flags.DEFINE_float("d_learning_rate", 0.0002, "Learning rate of for adam [0.0002]")
 flags.DEFINE_float("beta1", 0.5, "Momentum term of adam [0.5]")
 flags.DEFINE_integer("train_size", np.inf, "The size of train images [np.inf]")
 flags.DEFINE_integer("batch_size", 32, "The size of batch images [64]")

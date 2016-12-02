@@ -55,7 +55,7 @@ class networks(object):
 	d_bn3 = batch_norm(self.batch_size,name='d_bn3')
         h3 = lrelu(d_bn3(conv2d(h2, self.df_dim*8,k_h=4,k_w=4,d_h=2,d_w=2,name='d_h3_conv'))) #output size 16x16
 	d_bn4 = batch_norm(self.batch_size,name='d_bn4')
-        h4 = d_bn4(conv2d(h3,1,k_w=4,k_h=4,d_h=1,d_w=1,name='d_h4_conv')) #output size 16x 16
+        h4 = d_bn4(conv2d(h3,self.df_dim,k_w=4,k_h=4,d_h=1,d_w=1,name='d_h4_conv')) #output size 16x 16
         h5 = conv2d(h4,1,k_w=4,k_h=4,d_h=1,d_w=1,name='d_h5_conv') #output size 16x16
         return tf.nn.sigmoid(h5)
 
