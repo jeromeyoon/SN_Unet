@@ -59,7 +59,9 @@ class networks(object):
         h5 = conv2d(h4,1,k_w=4,k_h=4,d_h=1,d_w=1,name='d_h5_conv') #output size 16x16
         return tf.nn.sigmoid(h5)
 
-    def sampler(self,nir):
+    def sampler(self,nir,keep_prob):
+	
+	tf.get_variable_scope().reuse_variables()
 	#### encoder ####
         enc0 = lrelu(conv2d(nir,self.df_dim,name='g_enc0'))
 	g_bn1 = batch_norm(self.batch_size,name='g_bn1')
@@ -78,13 +80,13 @@ class networks(object):
         enc7 =tf.nn.relu(g_bn7(conv2d(enc6,self.df_dim*8,k_h=4,k_w=4,d_h=2,d_w=2,name='g_enc7'),train=False)) #output:2x2
 	#### Deconder #####
 	g_bn8 = batch_norm(self.batch_size,name='g_bn8')
-	dec1 = g_bn8(deconv2d(enc7,[self.batch_size,4,4,self.df_dim*8],name='g_dec1'),train=False)#output 4x4
+	dec1 = tf.nn.dropout(g_bn8(deconv2d(enc7,[self.batch_size,4,4,self.df_dim*8],name='g_dec1'),train=False),keep_prob)#output 4x4
 	dec1 = tf.nn.relu(tf.concat(3,[dec1,enc6]))
 	g_bn9 = batch_norm(self.batch_size,name='g_bn9')
-	dec2 = g_bn9(deconv2d(dec1,[self.batch_size,8,8,self.df_dim*8],name='g_dec2'),train=False)#output 8x8
+	dec2 = tf.nn.dropout(g_bn9(deconv2d(dec1,[self.batch_size,8,8,self.df_dim*8],name='g_dec2'),train=False),keep_prob)#output 8x8
 	dec2 = tf.nn.relu(tf.concat(3,[dec2,enc5]))
 	g_bn10 = batch_norm(self.batch_size,name='g_bn10')
-	dec3 = g_bn10(deconv2d(dec2,[self.batch_size,16,16,self.df_dim*8],name='g_dec3'),train=False)#output 16x16
+	dec3 = tf.nn.dropout(g_bn10(deconv2d(dec2,[self.batch_size,16,16,self.df_dim*8],name='g_dec3'),train=False),keep_prob)#output 16x16
 	dec3 = tf.nn.relu(tf.concat(3,[dec3,enc4]))
 	g_bn11 = batch_norm(self.batch_size,name='g_bn11')
 	dec4 = g_bn11(deconv2d(dec3,[self.batch_size,32,32,self.df_dim*8],name='g_dec4'),train=False)#output 32x32

@@ -167,19 +167,19 @@ def main(_):
 			        print("Selected material %03d/%d" % (list_val[idx],idx2))
 			        img = '/research2/IR_normal_small/save%03d/%d' % (list_val[idx],idx2)
 			        input_ = scipy.misc.imread(img+'/%d.bmp' %idx3).astype(float) #input NIR image
-			        input_ = scipy.misc.imresize(input_,[600,800])
+			        input_ = scipy.misc.imresize(input_,[256,256])
 			        input_  = input_/127.5 -1.0 # normalize -1 ~1
-			        input_ = np.reshape(input_,(1,600,800,1)) 
+			        input_ = np.reshape(input_,(1,256,256,1)) 
 			        input_ = np.array(input_).astype(np.float32)
 			        gt_ = scipy.misc.imread(img+'/12_Normal.bmp').astype(float)
 			        gt_ = np.sum(gt_,axis=2)
-			        gt_ = scipy.misc.imresize(gt_,[600,800])
-			        gt_ = np.reshape(gt_,[1,600,800,1])
+			        gt_ = scipy.misc.imresize(gt_,[256,256])
+			        gt_ = np.reshape(gt_,[1,256,256,1])
 			        mask =[gt_ >0.0][0]*1.0
 			        mean_mask = mean_nir * mask
 			        #input_ = input_ - mean_mask	
 			        start_time = time.time() 
-			        sample = sess.run(dcgan.sampler, feed_dict={dcgan.ir_images: input_})
+			        sample = sess.run(dcgan.sampler, feed_dict={dcgan.ir_images: input_,dcgan.keep_prob:1.0})
 			        print('time: %.8f' %(time.time()-start_time))     
 			        # normalization #
 			        sample = np.squeeze(sample).astype(np.float32)
