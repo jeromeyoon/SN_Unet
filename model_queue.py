@@ -45,8 +45,8 @@ class DCGAN(object):
 	self.keep_prob=tf.placeholder(tf.float32)
 	net  = networks(self.batch_size,self.df_dim)
 	self.G = net.generator(self.ir_images,self.keep_prob)
-	self.D = net.discriminator(self.normal_images)
-	self.D_  = net.discriminator(self.G,reuse=True)
+	self.D = net.discriminator(tf.concat(3,[self.normal_images,self.ir_images]))
+	self.D_  = net.discriminator(tf.concat(3,[self.G,self.ir_images]),reuse=True)
 
 	# generated surface normal
         self.d_loss_real = binary_cross_entropy_with_logits(tf.ones_like(self.D), self.D)
@@ -88,13 +88,16 @@ class DCGAN(object):
 	val_input = dataset['val_input']
 	val_gt = dataset['val_gt']
 	assert(len(train_input) == len(train_gt))
-
+	S = range(len(train_input))
+	shuffle(S)
+	SS = range(len(train_input[0]))
+	shuffle(SS) 
 	if self.use_queue:
 	    # creat thread
 	    coord = tf.train.Coordinator()
             num_thread =32
             for i in range(num_thread):
- 	        t = threading.Thread(target=self.load_and_enqueue,args=(coord,train_input,train_gt,num_thread))
+ 	        t = threading.Thread(target=self.load_and_enqueue,args=(coord,train_input,train_gt,S,SS,i,num_thread))
 	 	t.start()
 
 	if self.use_queue:
@@ -174,16 +177,17 @@ class DCGAN(object):
             return False
 
 	    
-    def load_and_enqueue(self,coord,file_list,label_list,num_thread=1):
+    def load_and_enqueue(self,coord,file_list,label_list,S,SS,idx=0,num_thread=1):
 	count =0;
 	rot=[0,90,180,270]
+	length = len(file_list)
 	while not coord.should_stop():
-	    
-	    i = random.randint(0,len(file_list)-1) #select an object+tile
+	    i = (count*num_thread + idx) % length;
+	    #i = random.randint(0,len(file_list)-1) #select an object+tile
 	    j = random.randint(0,len(file_list[0])-1) # select an light direction
 	    r = random.randint(0,2)
-            input_img = scipy.misc.imread(file_list[i][j]).reshape([256,256,1]).astype(np.float32)
-	    gt_img = scipy.misc.imread(label_list[i]).reshape([256,256,3]).astype(np.float32)
+            input_img = scipy.misc.imread(file_list[S[i]][SS[j]]).reshape([256,256,1]).astype(np.float32)
+	    gt_img = scipy.misc.imread(label_list[S[i]]).reshape([256,256,3]).astype(np.float32)
 	    input_img = input_img/127.5 -1.
 	    gt_img = gt_img/127.5 -1.
 	    input_img = scipy.ndimage.rotate(input_img,rot[r]) 

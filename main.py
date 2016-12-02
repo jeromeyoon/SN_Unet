@@ -21,8 +21,8 @@ flags.DEFINE_float("g_learning_rate", 0.0002, "Learning rate of for adam [0.0002
 flags.DEFINE_float("d_learning_rate", 0.00001, "Learning rate of for adam [0.0002]")
 flags.DEFINE_float("beta1", 0.5, "Momentum term of adam [0.5]")
 flags.DEFINE_integer("train_size", np.inf, "The size of train images [np.inf]")
-flags.DEFINE_integer("batch_size", 16, "The size of batch images [64]")
-flags.DEFINE_string("dataset", "sn_unet", "The name of dataset [celebA, mnist, lsun]")
+flags.DEFINE_integer("batch_size", 32, "The size of batch images [64]")
+flags.DEFINE_string("dataset", "sn_unet_pair", "The name of dataset [celebA, mnist, lsun]")
 flags.DEFINE_string("checkpoint_dir", "checkpoint", "Directory name to save the checkpoints [checkpoint]")
 flags.DEFINE_string("sample_dir", "output", "Directory name to save the image samples [samples]")
 flags.DEFINE_boolean("is_train", False, "True for training, False for testing [False]")
@@ -157,7 +157,6 @@ def main(_):
 		    model = model.split('/')
 		    model = model[-1]
                     print('Load model: %s \n' %model)
-		    pdb.set_trace()
 		    dcgan.load(FLAGS.checkpoint_dir,model)
 	            for idx in range(len(list_val)):
 		        if not os.path.exists(os.path.join(savepath,'%03d' %list_val[idx])):
@@ -165,7 +164,7 @@ def main(_):
 		        for idx2 in range(1,10): #tilt angles 1~9 
 		            for idx3 in range(1,13): # light source 
 			        print("Selected material %03d/%d" % (list_val[idx],idx2))
-			        img = '/research2/IR_normal_small/save%03d/%d' % (list_val[idx],idx2)
+			        img = '/research2/ECCV_dataset_resized/save%03d/%d' % (list_val[idx],idx2)
 			        input_ = scipy.misc.imread(img+'/%d.bmp' %idx3).astype(float) #input NIR image
 			        input_ = scipy.misc.imresize(input_,[256,256])
 			        input_  = input_/127.5 -1.0 # normalize -1 ~1
