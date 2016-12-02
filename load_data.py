@@ -36,8 +36,8 @@ def load_pickle():
 	
     with open('ECCV_256size.pickle','rb') as f:
         dataset = pickle.load(f)
-	pdb.set_trace()
 	return dataset
-
+"""
 if __name__=='__main__':
     load_pickle()
+"""

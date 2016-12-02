@@ -18,14 +18,11 @@ def create_mask(images):
     return mask
 
 
-def get_image(image_path,gt_path,image_size,randx,randy,is_crop=True):
-    gt =transform(imread(gt_path),image_size,randx,randy,is_crop)
-    #gt = surface_normal(transform(imread(gt_path),image_size,randx,randy,is_crop))
-    input_ = transform(imread(image_path),image_size,randx,randy,is_crop)
-    #input_ = np.clip(input_**random.uniform(0.5,1.0),0.0,1.0)
-    #input_ = transform2(input_,image_size,randx,randy,is_crop)
-    #mask = create_mask(input_)
-
+def get_image(image_path,gt_path):
+    gt =imread(gt_path)
+    gt = gt/127.5-1.
+    input_ = imread(image_path)
+    input_ =input_/127.5-1.
     return np.concatenate((input_,gt),axis=2)
 
 def surface_normal(surface):
