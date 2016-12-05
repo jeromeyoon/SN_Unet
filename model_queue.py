@@ -1,4 +1,4 @@
-import os,time,pdb,argparse,threading,random,pdb
+import os,time,pdb,argparse,threading,random
 from glob import glob
 import numpy as np
 from numpy import inf
@@ -52,7 +52,7 @@ class DCGAN(object):
         self.d_loss_real = binary_cross_entropy_with_logits(tf.ones_like(self.D), self.D)
         self.d_loss_fake = binary_cross_entropy_with_logits(tf.zeros_like(self.D_), self.D_)
         self.d_loss = self.d_loss_real + self.d_loss_fake
-        self.L1_loss = tf.div(tf.reduce_sum(tf.abs(tf.sub(self.G,self.normal_images))),ir_image_shape[0]*ir_image_shape[1]*3)*100
+        self.L1_loss = tf.div(tf.reduce_sum(tf.abs(tf.sub(self.G,self.normal_images))),self.ir_image_shape[0]*self.ir_image_shape[1]*3)*100
         self.g_loss = binary_cross_entropy_with_logits(tf.ones_like(self.D_), self.D_)
         self.gen_loss = self.g_loss + self.L1_loss
 
@@ -73,7 +73,6 @@ class DCGAN(object):
         g_optim = tf.train.AdamOptimizer(config.g_learning_rate,beta1=config.beta1) \
                           .minimize(self.gen_loss, global_step=global_step1,var_list=self.g_vars)
 	tf.initialize_all_variables().run()
-	pdb.set_trace()	
         start_time = time.time()
 
         if self.load(self.checkpoint_dir):
@@ -95,7 +94,7 @@ class DCGAN(object):
 	if self.use_queue:
 	    # creat thread
 	    coord = tf.train.Coordinator()
-            num_thread =16
+            num_thread =1
             for i in range(num_thread):
  	        t = threading.Thread(target=self.load_and_enqueue,args=(coord,train_input,train_gt,S,SS,i,num_thread))
 	 	t.start()
@@ -106,6 +105,8 @@ class DCGAN(object):
 	        batch_idxs = min(len(train_input), config.train_size)/config.batch_size
 		sum_L1 = 0.0
 		sum_g =0.0
+		sum_d_real = 0.0
+		sum_d_fake =0.0
 		if epoch ==0:
 		    train_log = open(os.path.join("logs",'train_%s.log' %config.dataset),'w')
 		else:
@@ -119,9 +120,18 @@ class DCGAN(object):
 		     % (epoch, idx, batch_idxs,time.time() - start_time,g_loss,L1_loss,d_loss_real,d_loss_fake))
 		     sum_L1 += L1_loss 	
 		     sum_g += g_loss	
-		train_log.write('epoch %06d mean_g %.6f  mean_L1 %.6f\n' %(epoch,sum_g/(batch_idxs),sum_L1/(batch_idxs)))
+		     sum_d_real += d_loss_real
+		     sum_d_fake += d_loss_fake
+		train_log.write('epoch %06d mean_g %.6f  mean_L1 %.6f mean_d_real: %.6f mean d_fake: %.6f\n' %(epoch,sum_g/(batch_idxs),sum_L1/(batch_idxs),sum_d_real/batch_idxs,sum_d_fake/batch_idxs))
 		train_log.close()
 	        self.save(config.checkpoint_dir,global_step)
+
+	    ############### Validation #################
+		for idx in xrange(0,val_batch_idxs):
+        	     start_time = time.time()
+		     _,g_loss,L1_loss =self.sess.run([g_optim,self.g_loss,self.L1_loss],feed_dict={self.keep_prob:1.0})
+		     print("Val Epoch: [%2d] [%4d/%4d] time: %4.4f g_loss: %.6f L1_loss:%.4f d_loss_real:%.4f d_loss_fake:%.4f" \
+
 
 
 	else:
@@ -194,4 +204,4 @@ class DCGAN(object):
 	    #gt_img = scipy.ndimage.rotate(gt_img,rot[r])
             self.sess.run(self.enqueue_op,feed_dict={self.ir_image_single:input_img,self.normal_image_single:gt_img})
 	    count +=1
-		
+	    	

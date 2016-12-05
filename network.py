@@ -29,7 +29,7 @@ class networks(object):
 	dec1 = tf.nn.relu(tf.concat(3,[dec1,enc6]))
 	g_bn9 = batch_norm(self.batch_size,name='g_bn9')
 	dec2 = tf.image.resize_nearest_neighbor(dec1,[8,8])
-	dec2 = tf.nn.dropout(g_bn9(conv2d(dec1,self.df_dim*8,k_h=4,k_w=4,name='g_dec2')),keep_prob) #output 8x8
+	dec2 = tf.nn.dropout(g_bn9(conv2d(dec2,self.df_dim*8,k_h=4,k_w=4,name='g_dec2')),keep_prob) #output 8x8
 	dec2 = tf.nn.relu(tf.concat(3,[dec2,enc5]))
 	g_bn10 = batch_norm(self.batch_size,name='g_bn10')
 	dec3 = tf.image.resize_nearest_neighbor(dec2,[16,16])
@@ -49,6 +49,7 @@ class networks(object):
 	dec6 = tf.nn.relu(tf.concat(3,[dec6,enc1]))
 	dec7 = tf.image.resize_nearest_neighbor(dec6,[256,256])
 	dec7 = conv2d(dec7,3,k_h=4,k_w=4,name='g_dec7') #output 256x256
+	
 	return tf.nn.tanh(dec7)
 
     def discriminator(self, image, reuse=False):
