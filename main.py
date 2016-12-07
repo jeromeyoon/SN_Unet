@@ -17,8 +17,8 @@ import matplotlib.image as mpimg
 import time
 flags = tf.app.flags
 flags.DEFINE_integer("epoch", 1000, "Epoch to train [25]")
-flags.DEFINE_float("g_learning_rate", 0.0002, "Learning rate of for adam [0.0002]")
-flags.DEFINE_float("d_learning_rate", 0.0002, "Learning rate of for adam [0.0002]")
+flags.DEFINE_float("g_learning_rate", 0.00002, "Learning rate of for adam [0.0002]")
+flags.DEFINE_float("d_learning_rate", 0.00002, "Learning rate of for adam [0.0002]")
 flags.DEFINE_float("beta1", 0.5, "Momentum term of adam [0.5]")
 flags.DEFINE_integer("train_size", np.inf, "The size of train images [np.inf]")
 flags.DEFINE_integer("batch_size", 16, "The size of batch images [64]")
@@ -39,8 +39,9 @@ def main(_):
     if not os.path.exists(os.path.join('./logs',time.strftime('%d%m'))):
 	os.makedirs(os.path.join('./logs',time.strftime('%d%m')))
 
-    gpu_config = tf.GPUOptions(per_process_gpu_memory_fraction=FLAGS.gpu)
-    with tf.Session(config=tf.ConfigProto(gpu_options=gpu_config)) as sess:
+    #gpu_config = tf.GPUOptions(per_process_gpu_memory_fraction=FLAGS.gpu)
+    with tf.Session() as sess:
+    #with tf.Session(config=tf.ConfigProto(gpu_options=gpu_config)) as sess:
         if FLAGS.is_train:
             dcgan = DCGAN(sess, batch_size=FLAGS.batch_size,\
 	    dataset_name=FLAGS.dataset, checkpoint_dir=FLAGS.checkpoint_dir)
