@@ -44,17 +44,21 @@ class DCGAN(object):
 	
 	self.keep_prob=tf.placeholder(tf.float32)
 	net  = networks(self.batch_size,self.df_dim)
-	self.G = net.generator(self.ir_images,self.keep_prob)
+	self.upsample1,self.upsample2,self.upsample3,self.upsample4,self.G = net.generator(self.ir_images,self.keep_prob)
 	self.D = net.discriminator(tf.concat(3,[self.normal_images,self.ir_images]))
 	self.D_  = net.discriminator(tf.concat(3,[self.G,self.ir_images]),reuse=True)
-
+	
+	self.L1_1 = tf.reduce_mean(tf.square(tf.sub(self.upsample1,tf.image.resize_nearest_neighbor(self.normal_images,[16,16]))))
+	self.L1_2 = tf.reduce_mean(tf.square(tf.sub(self.upsample2,tf.image.resize_nearest_neighbor(self.normal_images,[32,32]))))
+	self.L1_3 = tf.reduce_mean(tf.square(tf.sub(self.upsample3,tf.image.resize_nearest_neighbor(self.normal_images,[64,64]))))
+	self.L1_4 = tf.reduce_mean(tf.square(tf.sub(self.upsample4,tf.image.resize_nearest_neighbor(self.normal_images,[128,128]))))
 	# generated surface normal
         self.d_loss_real = binary_cross_entropy_with_logits(tf.ones_like(self.D), self.D)
         self.d_loss_fake = binary_cross_entropy_with_logits(tf.zeros_like(self.D_), self.D_)
         self.d_loss = self.d_loss_real + self.d_loss_fake
-        self.L1_loss = tf.div(tf.reduce_sum(tf.abs(tf.sub(self.G,self.normal_images))),self.ir_image_shape[0]*self.ir_image_shape[1]*3)*100
+        self.L1_loss = tf.reduce_mean(tf.square(tf.sub(self.G,self.normal_images)))
         self.g_loss = binary_cross_entropy_with_logits(tf.ones_like(self.D_), self.D_)
-        self.gen_loss = self.g_loss + self.L1_loss
+        self.gen_loss = self.g_loss + self.L1_loss +self.L1_1 +self.L1_2 + self.L1_3 +self.L1_4
 
 	self.saver = tf.train.Saver(max_to_keep=10)
 	t_vars = tf.trainable_variables()
@@ -91,10 +95,11 @@ class DCGAN(object):
 	shuffle(S)
 	SS = range(len(train_input[0]))
 	shuffle(SS) 
+	val_batch_idxs = min(len(val_input), config.train_size)/config.batch_size
 	if self.use_queue:
 	    # creat thread
 	    coord = tf.train.Coordinator()
-            num_thread =4
+            num_thread =1
             for i in range(num_thread):
  	        t = threading.Thread(target=self.load_and_enqueue,args=(coord,train_input,train_gt,S,SS,i,num_thread))
 	 	t.start()
@@ -109,8 +114,10 @@ class DCGAN(object):
 		sum_d_fake =0.0
 		if epoch ==0:
 		    train_log = open(os.path.join("logs",'train_%s.log' %config.dataset),'w')
+		    val_log = open(os.path.join("logs",'val_%s.log' %config.dataset),'w')
 		else:
 	    	    train_log = open(os.path.join("logs",'train_%s.log' %config.dataset),'aw')
+	    	    val_log = open(os.path.join("logs",'val_%s.log' %config.dataset),'aw')
 
 		for idx in xrange(0,batch_idxs):
         	     start_time = time.time()
@@ -125,16 +132,23 @@ class DCGAN(object):
 		train_log.write('epoch %06d mean_g %.6f  mean_L1 %.6f mean_d_real: %.6f mean d_fake: %.6f\n' %(epoch,sum_g/(batch_idxs),sum_L1/(batch_idxs),sum_d_real/batch_idxs,sum_d_fake/batch_idxs))
 		train_log.close()
 	        self.save(config.checkpoint_dir,global_step)
-	    """	
-	    ############### Validation #################
-	        val_batch_idxs = min(len(val_input), config.train_size)/config.batch_size
+	        """
+		############### Validation #################
 		for idx in xrange(0,val_batch_idxs):
-        	     start_time = time.time()
-		     g_loss,L1_loss =self.sess.run([self.g_loss,self.L1_loss],feed_dict={self.keep_prob:1.0})
-		     print("Val Epoch: [%2d] [%4d/%4d] time: %4.4f g_loss: %.6f L1_loss:%.4f d_loss_real:%.4f d_loss_fake:%.4f" \
-            """
-
-
+	            start_time = time.time()
+		    light = random.randint(0,11)
+		    batch_files = val_batch_idxs[idx*config.batch_size:(idx+1)*config.batch_size]
+		    batches = [get_image(val_inputlist[batch_file][light],val_gt[batch_file]) for batch_file in batch_files]
+		    batches = np.array(batches).astype(np.float32)
+		    batch_images = np.reshape(batches[:,:,:,0],[config.batch_size,256,2561])
+		    batchlabel_images = np.reshape(batches[:,:,:,1:],[config.batch_size,256,256,3])
+   	            L1_loss =self.sess.run([self.L1_loss],feed_dict={self.ir_images:input_img,self.normal_images:batchlabel_images,self.keep_prob:1.0})  
+		    sum_L1 += L1_loss
+		    print("Val Epoch: [%2d] [%4d/%4d] time: %4.4f L1_loss:%.4f " \
+		     % (epoch, idx, val_batch_idxs,time.time() - start_time,L1_loss))
+	        val_log.write('Val_epoch %06d mean_L1 %.6f \n' %(epoch,sum_L1/(val_batch_idxs)))
+		"""
+	
 	    for epoch in xrange(config.epoch):
 	         # loda training and validation dataset path
 	         shuffle_ = np.random.permutation(range(len(data)))

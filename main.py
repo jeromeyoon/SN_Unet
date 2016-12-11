@@ -21,7 +21,7 @@ flags.DEFINE_float("g_learning_rate", 0.00002, "Learning rate of for adam [0.000
 flags.DEFINE_float("d_learning_rate", 0.00002, "Learning rate of for adam [0.0002]")
 flags.DEFINE_float("beta1", 0.5, "Momentum term of adam [0.5]")
 flags.DEFINE_integer("train_size", np.inf, "The size of train images [np.inf]")
-flags.DEFINE_integer("batch_size", 16, "The size of batch images [64]")
+flags.DEFINE_integer("batch_size", 4, "The size of batch images [64]")
 flags.DEFINE_string("dataset", "sn_unet_pair", "The name of dataset [celebA, mnist, lsun]")
 flags.DEFINE_string("checkpoint_dir", "checkpoint", "Directory name to save the checkpoints [checkpoint]")
 flags.DEFINE_string("sample_dir", "output", "Directory name to save the image samples [samples]")
@@ -66,26 +66,26 @@ def main(_):
                 print("Computing arbitary dataset ")
 		trained_models = glob.glob(os.path.join(FLAGS.checkpoint_dir,FLAGS.dataset,'DCGAN.model*'))
 		trained_models  = natsorted(trained_models)
-		datapath = '/research2/Ammonight/*.bmp'
-                savepath = '/research2/Ammonight/output'
+		datapath = './*.png'
+                savepath = './'
 		mean_nir = -0.3313
 		fulldatapath = os.path.join(glob.glob(datapath))
-		model = trained_models[4]
+		model = trained_models[-2]
 		model = model.split('/')
 		model = model[-1]
-	        pdb.set_trace()
 		dcgan.load(FLAGS.checkpoint_dir,model)
                 for idx in xrange(len(fulldatapath)):
 		    input_= scipy.misc.imread(fulldatapath[idx]).astype(float)
-	            input_ = scipy.misc.imresize(input_,[600,800])
+		    pdb.set_trace()
+	            input_ = scipy.misc.imresize(input_,[256,256])
 	            input_  = (input_/127.5)-1. # normalize -1 ~1
                     input_ = np.reshape(input_,(1,input_.shape[0],input_.shape[1],1)) 
                     input_ = np.array(input_).astype(np.float32)
-		    mask = [input_>-1.0][0]*1.0
-		    mean_mask = mask * mean_nir
+		    #mask = [input_>-1.0][0]*1.0
+		    #mean_mask = mask * mean_nir
 		    #input_ = input_ - mean_mask
                     start_time = time.time() 
-                    sample = sess.run(dcgan.sampler, feed_dict={dcgan.ir_images: input_})
+                    sample = sess.run(dcgan.sampler, feed_dict={dcgan.ir_images: input_,dcgan.keep_prob:1.0})
                     print('time: %.8f' %(time.time()-start_time))     
                     # normalization #
                     sample = np.squeeze(sample).astype(np.float32)
@@ -98,7 +98,7 @@ def main(_):
                     name = fulldatapath[idx].split('/')
 		    name = name[-1].split('.')
                     name = name[0]
-		    savename = savepath + '/normal_' + name +'.bmp' 
+		    savename = savepath + 'normal_' + name +'.bmp' 
                     scipy.misc.imsave(savename, sample)
 
 	    elif VAL_OPTION ==2: # light source fixed
