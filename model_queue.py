@@ -45,18 +45,20 @@ class DCGAN(object):
 	self.keep_prob=tf.placeholder(tf.float32)
 	net  = networks(self.batch_size,self.df_dim)
 	self.upsample1,self.upsample2,self.upsample3,self.upsample4,self.G = net.generator(self.ir_images,self.keep_prob)
-	self.D = net.discriminator(tf.concat(3,[self.normal_images,self.ir_images]))
-	self.D_  = net.discriminator(tf.concat(3,[self.G,self.ir_images]),reuse=True)
+	self.D = net.discriminator(self.normal_images,self.keep_prob)
+	self.D_  = net.discriminator(self.G,self.keep_prob,reuse=True)
+	#self.D = net.discriminator(tf.concat(3,[self.normal_images,self.ir_images]))
+	#self.D_  = net.discriminator(tf.concat(3,[self.G,self.ir_images]),reuse=True)
 	
-	self.L1_1 = tf.reduce_mean(tf.square(tf.sub(self.upsample1,tf.image.resize_nearest_neighbor(self.normal_images,[16,16]))))
-	self.L1_2 = tf.reduce_mean(tf.square(tf.sub(self.upsample2,tf.image.resize_nearest_neighbor(self.normal_images,[32,32]))))
-	self.L1_3 = tf.reduce_mean(tf.square(tf.sub(self.upsample3,tf.image.resize_nearest_neighbor(self.normal_images,[64,64]))))
-	self.L1_4 = tf.reduce_mean(tf.square(tf.sub(self.upsample4,tf.image.resize_nearest_neighbor(self.normal_images,[128,128]))))
+	self.L1_1 = tf.div(tf.reduce_sum(tf.square(tf.sub(self.upsample1,tf.image.resize_nearest_neighbor(self.normal_images,[16,16])))),16*16*3)
+	self.L1_2 = tf.div(tf.reduce_mean(tf.square(tf.sub(self.upsample2,tf.image.resize_nearest_neighbor(self.normal_images,[32,32])))),32*32*3)
+	self.L1_3 = tf.div(tf.reduce_mean(tf.square(tf.sub(self.upsample3,tf.image.resize_nearest_neighbor(self.normal_images,[64,64])))),64*64*3)
+	self.L1_4 = tf.div(tf.reduce_mean(tf.square(tf.sub(self.upsample4,tf.image.resize_nearest_neighbor(self.normal_images,[128,128])))),128*128*3)
 	# generated surface normal
         self.d_loss_real = binary_cross_entropy_with_logits(tf.ones_like(self.D), self.D)
         self.d_loss_fake = binary_cross_entropy_with_logits(tf.zeros_like(self.D_), self.D_)
         self.d_loss = self.d_loss_real + self.d_loss_fake
-        self.L1_loss = tf.reduce_mean(tf.square(tf.sub(self.G,self.normal_images)))
+        self.L1_loss = tf.div(tf.reduce_sum(tf.square(tf.sub(self.G,self.normal_images))),256*256*3)
         self.g_loss = binary_cross_entropy_with_logits(tf.ones_like(self.D_), self.D_)
         self.gen_loss = self.g_loss + self.L1_loss +self.L1_1 +self.L1_2 + self.L1_3 +self.L1_4
 

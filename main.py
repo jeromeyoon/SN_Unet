@@ -22,7 +22,7 @@ flags.DEFINE_float("d_learning_rate", 0.00002, "Learning rate of for adam [0.000
 flags.DEFINE_float("beta1", 0.5, "Momentum term of adam [0.5]")
 flags.DEFINE_integer("train_size", np.inf, "The size of train images [np.inf]")
 flags.DEFINE_integer("batch_size", 4, "The size of batch images [64]")
-flags.DEFINE_string("dataset", "sn_unet_pair", "The name of dataset [celebA, mnist, lsun]")
+flags.DEFINE_string("dataset", "1211_sn_unet_pair", "The name of dataset [celebA, mnist, lsun]")
 flags.DEFINE_string("checkpoint_dir", "checkpoint", "Directory name to save the checkpoints [checkpoint]")
 flags.DEFINE_string("sample_dir", "output", "Directory name to save the image samples [samples]")
 flags.DEFINE_boolean("is_train", False, "True for training, False for testing [False]")
